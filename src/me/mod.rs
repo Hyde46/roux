@@ -1,5 +1,54 @@
 //! # Me
-//! Me module.
+//! Module to deal with authenticated endpoints.
+//!
+//! ## Basic Usage
+//! ```rust
+//! use roux::Reddit;
+//! use tokio;
+//! # extern crate dotenv;
+//!
+//! #[tokio::main]
+//! async fn main() {
+//!     # let client_id = dotenv::var("CLIENT_ID").unwrap();
+//!     # let client_secret = dotenv::var("CLIENT_SECRET").unwrap();
+//!     # let username = dotenv::var("USERNAME").unwrap();
+//!     # let password = dotenv::var("PASSWORD").unwrap();
+//!     static USER_AGENT: &str = "macos:roux:v0.3.0 (by /u/beanpup_py)";
+//!
+//!     let client = Reddit::new(&USER_AGENT, &client_id, &client_secret)
+//!         .username(&username)
+//!         .password(&password)
+//!         .login()
+//!         .await;
+//!
+//!     let me = client.unwrap();
+//! }
+//! ```
+//!
+//! ## OAuth Subreddit and Users
+//! `Me` can also be used to create `Subreddit` and `User` structures which gives it the
+//! proper authorization headers to be able to access private endpoints.
+//!
+//! ```rust
+//! # extern crate dotenv;
+//! # use roux::Reddit;
+//! # use tokio_test;
+//! # tokio_test::block_on(async {
+//! # let client_id = dotenv::var("CLIENT_ID").unwrap();
+//! # let client_secret = dotenv::var("CLIENT_SECRET").unwrap();
+//! # let username = dotenv::var("USERNAME").unwrap();
+//! # let password = dotenv::var("PASSWORD").unwrap();
+//! # static USER_AGENT: &str = "macos:roux:v0.3.0 (by /u/beanpup_py)";
+//! # let client = Reddit::new(&USER_AGENT, &client_id, &client_secret)
+//! #    .username(&username)
+//! #    .password(&password)
+//! #    .login()
+//! #    .await;
+//! # let me = client.unwrap();
+//! let private_sub = me.subreddit("astolfo");
+//! let oauth_user = me.user("my_friend");
+//! # })
+//! ```
 
 extern crate reqwest;
 extern crate serde_json;
@@ -8,6 +57,8 @@ use reqwest::{header, Client, Response};
 use serde::Serialize;
 
 use crate::config::Config;
+use crate::subreddit::Subreddit;
+use crate::user::User;
 use crate::util::{url, RouxError};
 
 pub mod responses;
@@ -19,8 +70,9 @@ use responses::{Friend, Inbox, MeData};
 pub struct Me {
     /// Access token
     pub access_token: String,
+    /// Given gonfig
+    pub config: Config,
     client: Client,
-    config: Config,
 }
 
 impl Me {
@@ -45,6 +97,16 @@ impl Me {
             config,
             client,
         }
+    }
+
+    /// Create a Subreddit instance with Oauth
+    pub fn subreddit(&self, name: &str) -> Subreddit {
+        Subreddit::new_oauth(name, self)
+    }
+
+    /// Create a User instance with Oauth
+    pub fn user(&self, name: &str) -> User {
+        User::new_oauth(name, self)
     }
 
     async fn get(&self, url: &str) -> Result<Response, RouxError> {

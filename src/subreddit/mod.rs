@@ -1,7 +1,7 @@
 //! # Subreddit
-//! A read-only module to read data from a specific subreddit.
+//! Module to read data from a specific subreddit.
 //!
-//! # Basic Usage
+//! ## Basic Usage
 //! ```rust
 //! use roux::Subreddit;
 //! use tokio;
@@ -9,7 +9,6 @@
 //! #[tokio::main]
 //! async fn main() {
 //!     let subreddit = Subreddit::new("rust");
-//!     // Now you are able to:
 //!
 //!     // Get moderators.
 //!     let moderators = subreddit.moderators().await;
@@ -63,8 +62,9 @@
 extern crate reqwest;
 extern crate serde_json;
 
+use crate::me::Me;
 use crate::util::{FeedOption, RouxError};
-use reqwest::Client;
+use reqwest::{header, Client};
 
 pub mod responses;
 use responses::{
@@ -122,9 +122,30 @@ impl Subreddit {
         }
     }
 
-    /// Get moderators.
+    /// Create a new authenticated `Subreddit` instance using an existing `Me`
+    pub fn new_oauth(name: &str, me: &Me) -> Subreddit {
+        let subreddit_url = format!("https://www.reddit.com/r/{}", name);
+        let mut headers = header::HeaderMap::new();
+
+        headers.insert(
+            header::AUTHORIZATION,
+            header::HeaderValue::from_str(&format!("Bearer {}", &me.access_token)).unwrap(),
+        );
+
+        headers.insert(
+            header::USER_AGENT,
+            header::HeaderValue::from_str(&me.config.user_agent[..]).unwrap(),
+        );
+
+        Subreddit {
+            name: name.to_owned(),
+            url: subreddit_url,
+            client: Client::builder().default_headers(headers).build().unwrap()
+        }
+    }
+
+    /// Get moderators. Requires an OAuth client.
     pub async fn moderators(&self) -> Result<Moderators, RouxError> {
-        // TODO: getting moderators require you to be logged in now
         Ok(self
             .client
             .get(&format!("{}/about/moderators/.json", self.url))

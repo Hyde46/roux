@@ -26,7 +26,7 @@ let me = client.unwrap();
 
 It is important that you pick a good user agent. The ideal format is
 `platform:program:version (by /u/yourname)`, e.g. `macos:roux:v0.3.0 (by /u/beanpup_py)`.
-This will authticate you as the user given in the username function.
+This will authenticate you as the user given in the username function.
 
 ### Usage
 
@@ -60,9 +60,22 @@ let me = client.unwrap();
 me.submit_link("LINK_TITLE", "LINK", "SUBREDDIT");
 ```
 
-### Read-Only Modules
+#### Subreddits and Users API
 
-There are also read-only modules that don't need authentication:
+Use the client to create an OAuth instance of `Subreddit` and `User`.
+
+```rust
+// Subreddit /r/rust
+let sub = me.subreddit("rust");
+// Get moderators
+let moderators = sub.moderators().await;
+
+// User /u/beanpup_py
+let user = me.user("beanpup_py");
+```
+
+You can use `Subreddits` and `Users` by themselves if you don't need OAuth. Additional
+options are described in the documentation:
 
 - [Subreddits](https://docs.rs/roux/latest/roux/subreddit/index.html)
 - [Users](https://docs.rs/roux/latest/roux/user/index.html)

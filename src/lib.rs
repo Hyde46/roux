@@ -127,6 +127,7 @@ impl Reddit {
             ("grant_type", "password"),
             ("username", &self.config.username.to_owned().unwrap()),
             ("password", &self.config.password.to_owned().unwrap()),
+            ("scope", "*")
         ];
 
         let request = self

@@ -1,7 +1,7 @@
 //! # User
-//! A read-only module to read data from for a specific user.
+//! A module to read data from for a specific user.
 //!
-//! # Usage
+//! ## Basic Usage
 //! ```rust
 //! use roux::User;
 //! use tokio;
@@ -26,9 +26,10 @@ extern crate reqwest;
 extern crate serde_json;
 
 use crate::util::RouxError;
-use reqwest::Client;
+use reqwest::{header, Client};
 
 pub mod responses;
+use crate::me::Me;
 use crate::subreddit::responses::{Submissions, SubredditComments};
 use responses::Overview;
 
@@ -45,6 +46,26 @@ impl User {
         User {
             user: user.to_owned(),
             client: Client::new(),
+        }
+    }
+
+    /// Create a new authenticated `User` instance using an existing `Me`
+    pub fn new_oauth(user: &str, me: &Me) -> User {
+        let mut headers = header::HeaderMap::new();
+
+        headers.insert(
+            header::AUTHORIZATION,
+            header::HeaderValue::from_str(&format!("Bearer {}", &me.access_token)).unwrap(),
+        );
+
+        headers.insert(
+            header::USER_AGENT,
+            header::HeaderValue::from_str(&me.config.user_agent[..]).unwrap(),
+        );
+
+        User {
+            user: user.to_owned(),
+            client: Client::builder().default_headers(headers).build().unwrap(),
         }
     }
 

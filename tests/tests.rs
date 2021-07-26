@@ -30,5 +30,10 @@ mod tests {
         let me = client.unwrap();
 
         assert!(me.me().await.is_ok());
+
+        // let subreddit = me.subreddit("astolfo");
+        // let moderators = subreddit.moderators().await;
+        //
+        // assert!(moderators.is_ok());
     }
 }
